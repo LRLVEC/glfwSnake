@@ -19,17 +19,19 @@ namespace Window
 			{nullptr,nullptr,nullptr,keyCallback}
 		};
 
+		constexpr static unsigned int width = 19;
+		constexpr static unsigned int height = 12;
 		struct SnakeBody
 		{
 			static unsigned int headPos;
 			Math::vec2<unsigned int> posPre;
 			Math::vec2<unsigned int> pos;
 			Math::vec3<float> color;
-			int(*map)[38];
+			int(*map)[SnakeGLFW::width];
 			Window window;
 
 
-			SnakeBody(Window::CallbackFun const& _callback, int(*_map)[38], Math::vec2<unsigned int>const& _pos, bool _isSnake)
+			SnakeBody(Window::CallbackFun const& _callback, int(*_map)[SnakeGLFW::width], Math::vec2<unsigned int>const& _pos, bool _isSnake)
 				:
 				pos(_pos),
 				color({ 0.462f, 0.725f, 0.f }),
@@ -49,8 +51,8 @@ namespace Window
 				unsigned int x, y;
 				do
 				{
-					x = rand() % 38;
-					y = rand() % 21;
+					x = rand() % width;
+					y = rand() % height;
 				} while (map[y][x]);
 				posPre = pos;
 				pos = { x,y };
@@ -107,7 +109,8 @@ namespace Window
 			}
 		};
 
-		int map[21][38];
+
+		int map[height][width];
 		Vector<SnakeBody> snake;
 		SnakeBody food;
 		bool endGame;
@@ -136,12 +139,12 @@ namespace Window
 			if (operated)return;
 			switch (_key)
 			{
-				case GLFW_KEY_ESCAPE:if (_action == GLFW_PRESS)endGame = true; break;
+			case GLFW_KEY_ESCAPE:if (_action == GLFW_PRESS)endGame = true; break;
 
-				case GLFW_KEY_RIGHT:if (_action == GLFW_PRESS && dir[1])dir = { 1,0 }; break;
-				case GLFW_KEY_LEFT:if (_action == GLFW_PRESS && dir[1])dir = { -1,0 }; break;
-				case GLFW_KEY_UP:if (_action == GLFW_PRESS && dir[0])dir = { 0,-1 }; break;
-				case GLFW_KEY_DOWN:if (_action == GLFW_PRESS && dir[0])dir = { 0,1 }; break;
+			case GLFW_KEY_RIGHT:if (_action == GLFW_PRESS && dir[1])dir = { 1,0 }; break;
+			case GLFW_KEY_LEFT:if (_action == GLFW_PRESS && dir[1])dir = { -1,0 }; break;
+			case GLFW_KEY_UP:if (_action == GLFW_PRESS && dir[0])dir = { 0,-1 }; break;
+			case GLFW_KEY_DOWN:if (_action == GLFW_PRESS && dir[0])dir = { 0,1 }; break;
 			}
 			operated = true;
 		}
@@ -151,38 +154,38 @@ namespace Window
 			{
 				timer.wait(100000000, glfwPollEvents);
 				Math::vec2<unsigned int>head(snake.end().pos + dir);
-				head[0] += 38;
-				head[0] %= 38;
-				head[1] += 21;
-				head[1] %= 21;
+				head[0] += width;
+				head[0] %= width;
+				head[1] += height;
+				head[1] %= height;
 				switch (map[head[1]][head[0]])
 				{
-					case 0:
+				case 0:
+				{
+					snake.end().setPos(head);
+					for (int c0(snake.length - 2); c0 >= 0; --c0)
+						snake[c0].setPos(snake[c0 + 1]);
+					break;
+				}
+				case 1:
+				{
+					endGame = true;
+					break;
+				}
+				case 2:
+				{
+					food.show(false);
+					snake.pushBack(SnakeBody(callbackFun, map, head, true));
+					for (int c0(0); c0 < snake.length; ++c0)
 					{
-						snake.end().setPos(head);
-						for (int c0(snake.length - 2); c0 >= 0; --c0)
-							snake[c0].setPos(snake[c0 + 1]);
-						break;
+						snake[snake.length - c0 - 1].setColor(c0);
+						snake[snake.length - c0 - 1].render();
 					}
-					case 1:
-					{
-						endGame = true;
-						break;
-					}
-					case 2:
-					{
-						food.show(false);
-						snake.pushBack(SnakeBody(callbackFun, map, head, true));
-						for (int c0(0); c0 < snake.length; ++c0)
-						{
-							snake[snake.length - c0 - 1].setColor(c0);
-							snake[snake.length - c0 - 1].render();
-						}
-						food.setPosFood();
-						food.render();
-						food.show(true);
-						break;
-					}
+					food.setPosFood();
+					food.render();
+					food.show(true);
+					break;
+				}
 				}
 				operated = false;
 			}
